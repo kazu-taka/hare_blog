@@ -130,7 +130,25 @@ class PostController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // idを使用してpostsテーブルからデータを取得する
+        $post = Post::find($id);
+
+        DB::beginTransaction();
+        try {
+            $post->delete();
+
+            if (!Storage::delete('images/posts/' . $post->image)) {
+                throw new \Exception('画像ファイルの削除に失敗しました。');
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors($e->getMessage());
+        }
+
+        return redirect()->route('posts.index')
+            ->with('notice', '記事を作成しました');
     }
 
     private static function createFileName($file)
